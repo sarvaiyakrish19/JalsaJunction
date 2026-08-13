@@ -259,6 +259,7 @@
     <button class="tab active" data-tab="ledger">Ledger</button>
     <button class="tab" data-tab="add">Add Sale</button>
     <button class="tab" data-tab="venues">Venues</button>
+    <button class="tab" data-tab="sync">Cloud Sync</button>
   </div>
 
   <!-- LEDGER PANEL -->
@@ -365,6 +366,32 @@
       </div>
     </div>
     <div id="venueList"></div>
+  </div>
+
+  <!-- CLOUD SYNC PANEL -->
+  <div class="panel" id="panel-sync">
+    <div class="card" style="margin-bottom:18px;">
+      <div class="field full" style="margin-bottom:14px;">
+        <label>Google Sheet Web App URL</label>
+        <input type="text" id="syncUrl" placeholder="https://script.google.com/macros/s/.../exec">
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn" id="saveSyncUrlBtn">Save URL</button>
+        <button class="btn-ghost" id="testSyncBtn">Test Connection</button>
+        <button class="btn-ghost" id="syncAllBtn">Sync All Records Now</button>
+      </div>
+      <div style="font-size:12.5px;color:var(--cream-dim);margin-top:14px;line-height:1.6;">
+        Paste the Web App URL from your Apps Script deployment here. Once saved, every new sale you log will automatically be sent to your Google Sheet, and payment screenshots will be saved into a "Jalsa Junction Screenshots" folder in your Drive.<br><br>
+        <b>Note:</b> because of how Google Apps Script handles cross-site requests, this app can confirm a sync was <i>sent</i> but can't always confirm Google received it. Use "Test Connection" after setup, and check your Sheet directly once in a while to be sure everything's landing.
+      </div>
+    </div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <span style="font-weight:700;font-size:14px;">Sync Status</span>
+        <span id="syncStatusSummary" style="font-size:13px;color:var(--cream-dim);"></span>
+      </div>
+      <div id="syncStatusDetail" style="font-size:12.5px;color:var(--cream-dim);"></div>
+    </div>
   </div>
 
   <footer>
@@ -610,14 +637,79 @@
       passType, qty, eventDate, dateSold, buy, sell,
       profit: (sell-buy)*qty,
       buyer, contact, method, account, status, promoter, notes,
-      screenshot: pendingScreenshot
+      screenshot: pendingScreenshot,
+      synced: false
     };
     txns.unshift(txn);
     if(!LS.set('jj_transactions', txns)) { txns.shift(); return; }
     clearForm();
     renderLedger();
     renderSummary();
+    syncTransaction(txn);
     document.querySelector('.tab[data-tab="ledger"]').click();
+  });
+
+  // ---------- Cloud Sync ----------
+  function getSyncUrl(){ return localStorage.getItem('jj_sync_url') || ''; }
+
+  function syncTransaction(t){
+    const url = getSyncUrl();
+    if(!url) return;
+    fetch(url, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(t)
+    }).then(()=>{
+      t.synced = true;
+      LS.set('jj_transactions', txns);
+      renderLedger();
+      renderSyncStatus();
+    }).catch(()=>{
+      t.synced = false;
+      LS.set('jj_transactions', txns);
+      renderSyncStatus();
+    });
+  }
+
+  function renderSyncStatus(){
+    const url = getSyncUrl();
+    const summary = document.getElementById('syncStatusSummary');
+    const detail = document.getElementById('syncStatusDetail');
+    if(!summary) return;
+    if(!url){
+      summary.textContent = 'No sync URL configured yet';
+      detail.textContent = '';
+      return;
+    }
+    const synced = txns.filter(t=>t.synced).length;
+    const unsynced = txns.length - synced;
+    summary.textContent = `${synced} synced · ${unsynced} pending`;
+    detail.textContent = unsynced > 0
+      ? 'Click "Sync All Records Now" to (re)send pending entries.'
+      : 'Everything has been sent to your Google Sheet.';
+  }
+
+  document.getElementById('saveSyncUrlBtn').addEventListener('click', ()=>{
+    const val = document.getElementById('syncUrl').value.trim();
+    if(!val){ alert('Paste your Apps Script Web App URL first.'); return; }
+    localStorage.setItem('jj_sync_url', val);
+    showToast('Sync URL saved.');
+    renderSyncStatus();
+  });
+
+  document.getElementById('testSyncBtn').addEventListener('click', ()=>{
+    const url = getSyncUrl();
+    if(!url){ alert('Paste and save your Web App URL first.'); return; }
+    window.open(url, '_blank');
+  });
+
+  document.getElementById('syncAllBtn').addEventListener('click', ()=>{
+    const url = getSyncUrl();
+    if(!url){ alert('Paste and save your Web App URL first.'); return; }
+    if(txns.length === 0){ alert('No transactions to sync yet.'); return; }
+    txns.forEach(t=>syncTransaction(t));
+    showToast(`Sending ${txns.length} record(s) to your Sheet...`);
   });
 
   // ---------- Ledger ----------
@@ -655,6 +747,7 @@
           <button data-receipt="${t.id}" title="Copy shareable receipt">✉️</button>
           <button data-del="${t.id}" title="Delete">🗑</button>
         </div>
+        <div class="ev-sub" style="grid-column:1/-1;font-size:11px;">${getSyncUrl() ? (t.synced ? '☁️ Synced' : '⏳ Not synced yet') : ''}</div>
       </div>`;
     });
     table.innerHTML = html;
@@ -823,6 +916,8 @@
   renderLedger();
   renderSummary();
   updateProfitPreview();
+  document.getElementById('syncUrl').value = getSyncUrl();
+  renderSyncStatus();
 })();
 </script>
 </body>
