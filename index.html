@@ -437,6 +437,7 @@
   let venues = LS.get("jj_venues", null);
   if(!venues){ venues = DEFAULT_VENUES; LS.set("jj_venues", venues); }
   let txns = LS.get("jj_transactions", []);
+  let nextTxnId = LS.get("jj_nextTxnId", 1);
   let editingId = null;
 
   // ---------- Lock screen ----------
@@ -661,7 +662,7 @@
       });
     } else {
       txn = {
-        id: 't'+Date.now(),
+        id: String(nextTxnId),
         venueId, venueLabel: v ? `${v.singer} — ${v.venue}` : 'Unknown',
         passType, qty, eventDate, dateSold, buy, sell,
         profit: (sell-buy)*qty,
@@ -670,6 +671,8 @@
         synced: false
       };
       txns.unshift(txn);
+      nextTxnId++;
+      LS.set('jj_nextTxnId', nextTxnId);
     }
 
     if(!LS.set('jj_transactions', txns)) { if(!editingId) txns.shift(); return; }
@@ -979,8 +982,12 @@
         if(!confirm('This will replace all current data on this device with the backup file. Continue?')) return;
         venues = data.venues || DEFAULT_VENUES;
         txns = data.transactions || [];
+        // Recalculate the next transaction ID based on imported data
+        const maxId = txns.length > 0 ? Math.max(...txns.map(t => parseInt(t.id) || 0)) : 0;
+        nextTxnId = maxId + 1;
         LS.set('jj_venues', venues);
         LS.set('jj_transactions', txns);
+        LS.set('jj_nextTxnId', nextTxnId);
         renderVenueSelects(); renderVenueList(); renderLedger(); renderSummary(); renderEditSelect();
         alert('Backup restored.');
       }catch(err){
