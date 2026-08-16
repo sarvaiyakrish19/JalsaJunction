@@ -164,10 +164,18 @@
   .paper{background:var(--paper);border-radius:var(--radius);overflow:hidden;color:var(--ink-text);}
   .txn-row{
     display:grid;grid-template-columns:1.6fr 1fr 0.9fr 0.9fr 0.9fr 0.7fr;
-    gap:8px;padding:14px 16px;border-bottom:1px solid var(--paper-line);align-items:center;font-size:13px;
+    gap:8px;padding:14px 16px 14px 13px;border-bottom:1px solid var(--paper-line);align-items:center;font-size:13px;
+    border-left:4px solid transparent;
   }
+  .txn-row.status-green{border-left-color:#2E8B57;}
+  .txn-row.status-red{border-left-color:#C6436B;background:#FBEAEE !important;}
+  .txn-row.status-amber{border-left-color:#D9A544;}
+  .status-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:middle;}
+  .status-dot.green{background:#2E8B57;}
+  .status-dot.red{background:#C6436B;}
+  .status-dot.amber{background:#D9A544;}
   .txn-row.head{background:var(--maroon);color:var(--cream);font-weight:700;font-size:11.5px;text-transform:uppercase;letter-spacing:0.6px;}
-  .txn-row:nth-child(even):not(.head){background:#F4E9D6;}
+  .txn-row:nth-child(even):not(.head):not(.status-red){background:#F4E9D6;}
   .txn-row .ev-name{font-weight:700;}
   .txn-row .ev-sub{font-size:11.5px;color:#7A6A55;}
   .txn-row .profit-pos{color:#1E7A72;font-weight:700;font-family:'JetBrains Mono',monospace;}
@@ -217,7 +225,7 @@
     <div class="lock-diya"></div>
     <h2 id="lockTitle">Welcome to Jalsa Junction</h2>
     <p id="lockSub">Set a passcode to protect your ledger on this device.</p>
-    <input type="password" id="lockInput" maxlength="12" placeholder="••••" inputmode="numeric">
+    <input type="password" id="lockInput" maxlength="6" placeholder="••••••" inputmode="numeric" pattern="[0-9]*">
     <button class="btn" id="lockBtn" style="width:100%">Set Passcode</button>
     <div class="lock-error" id="lockError"></div>
   </div>
@@ -256,10 +264,9 @@
 
   <!-- TABS -->
   <div class="tabs">
-    <button class="tab active" data-tab="ledger">Ledger</button>
+    <button class="tab active" data-tab="ledger">Sales Till Now</button>
     <button class="tab" data-tab="add">Add Sale</button>
-    <button class="tab" data-tab="venues">Venues</button>
-    <button class="tab" data-tab="sync">Cloud Sync</button>
+    <button class="tab" data-tab="venues">Edit</button>
   </div>
 
   <!-- LEDGER PANEL -->
@@ -288,12 +295,12 @@
           <input type="text" inputmode="numeric" id="f_qty" value="1">
         </div>
         <div class="field">
-          <label>Event Date</label>
+          <label>📅 Event Date</label>
           <input type="date" id="f_eventdate">
           <div class="day-hint" id="dayHint"></div>
         </div>
         <div class="field">
-          <label>Date Sold</label>
+          <label>📅 Date Sold</label>
           <input type="date" id="f_datesold">
         </div>
         <div class="field">
@@ -324,7 +331,7 @@
         </div>
         <div class="field">
           <label>Payment Status</label>
-          <select id="f_status"><option>Paid</option><option>Pending</option><option>Partially Paid</option><option>Refunded</option></select>
+          <select id="f_status"><option>Paid</option><option>Pending</option><option>Partially Paid</option><option>Refunded</option><option>Cancelled</option></select>
         </div>
         <div class="field">
           <label>Promoter</label>
@@ -366,31 +373,21 @@
       </div>
     </div>
     <div id="venueList"></div>
-  </div>
 
-  <!-- CLOUD SYNC PANEL -->
-  <div class="panel" id="panel-sync">
-    <div class="card" style="margin-bottom:18px;">
-      <div class="field full" style="margin-bottom:14px;">
-        <label>Google Sheet Web App URL</label>
-        <input type="text" id="syncUrl" placeholder="https://script.google.com/macros/s/.../exec">
+    <div style="margin-top:26px;">
+      <div style="font-weight:700;font-size:15px;margin-bottom:12px;color:var(--gold);">Edit a Past Sale</div>
+      <div class="card" style="margin-bottom:14px;">
+        <div class="field full">
+          <label>Select a sale to edit</label>
+          <select id="editSelect"><option value="">— choose a sale —</option></select>
+        </div>
+        <div style="margin-top:10px;">
+          <button class="btn-ghost btn-sm" id="loadEditBtn">Load into Add Sale form</button>
+        </div>
+        <div style="font-size:12px;color:var(--cream-dim);margin-top:10px;">
+          Picking a sale here opens it in the Add Sale tab with all its details filled in — change what you need and hit "Update Sale". Deleted/cancelled sales aren't editable; delete and re-add instead if something needs to change there.
+        </div>
       </div>
-      <div style="display:flex;gap:10px;flex-wrap:wrap;">
-        <button class="btn" id="saveSyncUrlBtn">Save URL</button>
-        <button class="btn-ghost" id="testSyncBtn">Test Connection</button>
-        <button class="btn-ghost" id="syncAllBtn">Sync All Records Now</button>
-      </div>
-      <div style="font-size:12.5px;color:var(--cream-dim);margin-top:14px;line-height:1.6;">
-        Paste the Web App URL from your Apps Script deployment here. Once saved, every new sale you log will automatically be sent to your Google Sheet, and payment screenshots will be saved into a "Jalsa Junction Screenshots" folder in your Drive.<br><br>
-        <b>Note:</b> because of how Google Apps Script handles cross-site requests, this app can confirm a sync was <i>sent</i> but can't always confirm Google received it. Use "Test Connection" after setup, and check your Sheet directly once in a while to be sure everything's landing.
-      </div>
-    </div>
-    <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-        <span style="font-weight:700;font-size:14px;">Sync Status</span>
-        <span id="syncStatusSummary" style="font-size:13px;color:var(--cream-dim);"></span>
-      </div>
-      <div id="syncStatusDetail" style="font-size:12.5px;color:var(--cream-dim);"></div>
     </div>
   </div>
 
@@ -418,6 +415,10 @@
 (function(){
   "use strict";
 
+  // ---------- Baked-in cloud sync (no UI, no manual entry needed on any device) ----------
+  const DEFAULT_SYNC_URL = "https://script.google.com/macros/s/AKfycbzUW_nV0FwxTT285uyBKpSeBEhEAmdIZAyMo9MWMisJvHeFLl61bsViG12YKUW4Lj8N/exec";
+  const OWNER_NAME = "Krish Sarvaiya";
+
   // ---------- Storage helpers ----------
   const LS = {
     get(key, fallback){ try{ const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }catch(e){ return fallback; } },
@@ -436,6 +437,7 @@
   let venues = LS.get("jj_venues", null);
   if(!venues){ venues = DEFAULT_VENUES; LS.set("jj_venues", venues); }
   let txns = LS.get("jj_transactions", []);
+  let editingId = null;
 
   // ---------- Lock screen ----------
   const lockScreen = document.getElementById('lockScreen');
@@ -451,11 +453,11 @@
   function showLock(){
     if(hasPasscode()){
       lockTitle.textContent = "Welcome back";
-      lockSub.textContent = "Enter your passcode to open the ledger.";
+      lockSub.textContent = "Enter your 6-digit passcode to open the ledger.";
       lockBtn.textContent = "Unlock";
     } else {
       lockTitle.textContent = "Welcome to Jalsa Junction";
-      lockSub.textContent = "Set a passcode to protect your ledger on this device. You'll need it every time you open this page.";
+      lockSub.textContent = "Set a 6-digit passcode to protect your ledger on this device. You'll need it every time you open this page.";
       lockBtn.textContent = "Set Passcode";
     }
     lockScreen.style.display = 'flex';
@@ -464,12 +466,18 @@
     setTimeout(()=>lockInput.focus(), 100);
   }
 
+  // Keep the passcode field digits-only as the person types
+  lockInput.addEventListener('input', ()=>{
+    lockInput.value = lockInput.value.replace(/\D/g, '').slice(0, 6);
+  });
+
   lockBtn.addEventListener('click', ()=>{
     const val = lockInput.value.trim();
-    if(val.length < 3){ lockError.textContent = "Use at least 3 characters."; return; }
+    if(!/^\d{6}$/.test(val)){ lockError.textContent = "Enter exactly 6 digits."; return; }
     if(hasPasscode()){
       if(simpleHash(val) === localStorage.getItem('jj_pass')){
         lockScreen.style.display = 'none';
+        setTimeout(()=>showToast(`Hi ${OWNER_NAME} 👋`), 300);
       } else {
         lockError.textContent = "Incorrect passcode.";
         lockInput.value = '';
@@ -477,6 +485,7 @@
     } else {
       localStorage.setItem('jj_pass', simpleHash(val));
       lockScreen.style.display = 'none';
+      setTimeout(()=>showToast(`Hi ${OWNER_NAME} 👋`), 300);
     }
   });
   lockInput.addEventListener('keydown', e=>{ if(e.key==='Enter') lockBtn.click(); });
@@ -606,6 +615,8 @@
     pendingScreenshot = null;
     const box = document.getElementById('ssPreviewBox');
     if(box) box.outerHTML = '<div class="ph" id="ssPreviewBox">No SS</div>';
+    editingId = null;
+    document.getElementById('saveSaleBtn').textContent = 'Save Sale';
   }
   document.getElementById('clearFormBtn').addEventListener('click', clearForm);
 
@@ -631,26 +642,99 @@
     }
 
     const v = venues.find(v=>v.id===venueId);
-    const txn = {
-      id: 't'+Date.now(),
-      venueId, venueLabel: v ? `${v.singer} — ${v.venue}` : 'Unknown',
-      passType, qty, eventDate, dateSold, buy, sell,
-      profit: (sell-buy)*qty,
-      buyer, contact, method, account, status, promoter, notes,
-      screenshot: pendingScreenshot,
-      synced: false
-    };
-    txns.unshift(txn);
-    if(!LS.set('jj_transactions', txns)) { txns.shift(); return; }
+
+    let txn;
+    if(editingId){
+      txn = txns.find(t=>t.id === editingId);
+      if(!txn){ alert('That sale could not be found (it may have been deleted). Starting a fresh entry instead.'); editingId = null; }
+    }
+
+    if(txn){
+      // Update existing sale in place — same id, so the Sheet row gets overwritten, not duplicated
+      Object.assign(txn, {
+        venueId, venueLabel: v ? `${v.singer} — ${v.venue}` : 'Unknown',
+        passType, qty, eventDate, dateSold, buy, sell,
+        profit: (sell-buy)*qty,
+        buyer, contact, method, account, status, promoter, notes,
+        screenshot: pendingScreenshot !== null ? pendingScreenshot : txn.screenshot,
+        synced: false
+      });
+    } else {
+      txn = {
+        id: 't'+Date.now(),
+        venueId, venueLabel: v ? `${v.singer} — ${v.venue}` : 'Unknown',
+        passType, qty, eventDate, dateSold, buy, sell,
+        profit: (sell-buy)*qty,
+        buyer, contact, method, account, status, promoter, notes,
+        screenshot: pendingScreenshot,
+        synced: false
+      };
+      txns.unshift(txn);
+    }
+
+    if(!LS.set('jj_transactions', txns)) { if(!editingId) txns.shift(); return; }
+    const wasEditing = !!editingId;
+    editingId = null;
+    document.getElementById('saveSaleBtn').textContent = 'Save Sale';
     clearForm();
     renderLedger();
     renderSummary();
+    renderEditSelect();
     syncTransaction(txn);
+    showToast(wasEditing ? 'Sale updated.' : 'Sale saved.');
     document.querySelector('.tab[data-tab="ledger"]').click();
   });
 
-  // ---------- Cloud Sync ----------
-  function getSyncUrl(){ return localStorage.getItem('jj_sync_url') || ''; }
+  // ---------- Edit an existing sale ----------
+  function renderEditSelect(){
+    const sel = document.getElementById('editSelect');
+    if(!sel) return;
+    const editable = txns.filter(t=>!isVoidStatus(t.status));
+    sel.innerHTML = '<option value="">— choose a sale —</option>' +
+      editable.map(t=>`<option value="${t.id}">${t.venueLabel} · ${t.passType} · ${t.dateSold || 'no date'} · ${t.buyer || 'no buyer'}</option>`).join('');
+  }
+
+  document.getElementById('loadEditBtn').addEventListener('click', ()=>{
+    const id = document.getElementById('editSelect').value;
+    if(!id){ alert('Pick a sale from the dropdown first.'); return; }
+    const t = txns.find(t=>t.id === id);
+    if(!t){ alert('That sale could not be found.'); return; }
+
+    editingId = id;
+    document.getElementById('f_venue').value = t.venueId;
+    document.getElementById('f_passtype').value = t.passType;
+    document.getElementById('f_qty').value = t.qty;
+    document.getElementById('f_eventdate').value = t.eventDate;
+    document.getElementById('f_datesold').value = t.dateSold;
+    document.getElementById('f_buy').value = t.buy;
+    document.getElementById('f_sell').value = t.sell;
+    document.getElementById('f_buyer').value = t.buyer;
+    document.getElementById('f_contact').value = t.contact;
+    document.getElementById('f_method').value = t.method;
+    document.getElementById('f_account').value = t.account;
+    document.getElementById('f_status').value = t.status;
+    document.getElementById('f_promoter').value = t.promoter;
+    document.getElementById('f_notes').value = t.notes;
+    pendingScreenshot = t.screenshot || null;
+    const box = document.getElementById('ssPreviewBox');
+    if(box){
+      if(t.screenshot) box.outerHTML = `<img src="${t.screenshot}" id="ssPreviewBox">`;
+      else box.outerHTML = '<div class="ph" id="ssPreviewBox">No SS</div>';
+    }
+    if(document.getElementById('f_eventdate').value){
+      const d = new Date(document.getElementById('f_eventdate').value + 'T00:00:00');
+      document.getElementById('dayHint').textContent = dayNames[d.getDay()];
+    }
+    updateProfitPreview();
+    document.getElementById('saveSaleBtn').textContent = 'Update Sale';
+    document.querySelector('.tab[data-tab="add"]').click();
+  });
+
+  // ---------- Cloud Sync (silent, background only) ----------
+  function getSyncUrl(){
+    const url = localStorage.getItem('jj_sync_url') || DEFAULT_SYNC_URL;
+    return (url && url.indexOf('PASTE_YOUR') === 0) ? '' : url;
+  }
 
   function syncTransaction(t){
     const url = getSyncUrl();
@@ -672,48 +756,36 @@
     });
   }
 
-  function renderSyncStatus(){
+  function deleteFromSheet(id){
     const url = getSyncUrl();
-    const summary = document.getElementById('syncStatusSummary');
-    const detail = document.getElementById('syncStatusDetail');
-    if(!summary) return;
-    if(!url){
-      summary.textContent = 'No sync URL configured yet';
-      detail.textContent = '';
-      return;
-    }
-    const synced = txns.filter(t=>t.synced).length;
-    const unsynced = txns.length - synced;
-    summary.textContent = `${synced} synced · ${unsynced} pending`;
-    detail.textContent = unsynced > 0
-      ? 'Click "Sync All Records Now" to (re)send pending entries.'
-      : 'Everything has been sent to your Google Sheet.';
+    if(!url) return; // nothing to remove remotely if never synced
+    fetch(url, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ id, action: 'delete' })
+    }).catch(()=>{});
   }
 
-  document.getElementById('saveSyncUrlBtn').addEventListener('click', ()=>{
-    const val = document.getElementById('syncUrl').value.trim();
-    if(!val){ alert('Paste your Apps Script Web App URL first.'); return; }
-    localStorage.setItem('jj_sync_url', val);
-    showToast('Sync URL saved.');
-    renderSyncStatus();
-  });
-
-  document.getElementById('testSyncBtn').addEventListener('click', ()=>{
-    const url = getSyncUrl();
-    if(!url){ alert('Paste and save your Web App URL first.'); return; }
-    window.open(url, '_blank');
-  });
-
-  document.getElementById('syncAllBtn').addEventListener('click', ()=>{
-    const url = getSyncUrl();
-    if(!url){ alert('Paste and save your Web App URL first.'); return; }
-    if(txns.length === 0){ alert('No transactions to sync yet.'); return; }
-    txns.forEach(t=>syncTransaction(t));
-    showToast(`Sending ${txns.length} record(s) to your Sheet...`);
-  });
+  // Sync now runs silently in the background — no visible controls, nothing to configure per device.
+  function renderSyncStatus(){ /* intentionally no UI to update anymore */ }
 
   // ---------- Ledger ----------
   function fmt(n){ return '₹' + Math.round(n).toLocaleString('en-IN'); }
+
+  function isVoidStatus(status){
+    return status === 'Deleted' || status === 'Cancelled';
+  }
+  function rowStatusClass(t){
+    if(isVoidStatus(t.status)) return 'status-red';
+    if(t.status === 'Paid') return 'status-green';
+    return 'status-amber'; // Pending, Partially Paid, Refunded
+  }
+  function statusDotClass(t){
+    if(isVoidStatus(t.status)) return 'red';
+    if(t.status === 'Paid') return 'green';
+    return 'amber';
+  }
 
   function renderLedger(){
     const search = document.getElementById('searchBox').value.toLowerCase();
@@ -735,19 +807,20 @@
       <div>Event / Buyer</div><div>Pass</div><div>Sold</div><div>Buy→Sell</div><div>Profit</div><div style="text-align:right;">SS / Actions</div>
     </div>`;
     list.forEach(t=>{
-      html += `<div class="txn-row" data-id="${t.id}">
-        <div><div class="ev-name">${t.venueLabel}</div><div class="ev-sub">${t.buyer || '—'} · ${t.method}${t.status!=='Paid' ? ' · '+t.status : ''}</div></div>
+      const voided = isVoidStatus(t.status);
+      html += `<div class="txn-row ${rowStatusClass(t)}" data-id="${t.id}">
+        <div><div class="ev-name"><span class="status-dot ${statusDotClass(t)}"></span>${t.venueLabel}${voided ? ' — <span style="color:#B23A55;font-weight:700;">'+t.status.toUpperCase()+'</span>' : ''}</div><div class="ev-sub">${t.buyer || '—'} · ${t.method}${t.status!=='Paid' && !voided ? ' · '+t.status : ''}</div></div>
         <div>${t.passType} ${t.qty>1?'×'+t.qty:''}</div>
         <div>${t.dateSold || '—'}</div>
         <div>${fmt(t.buy)} → ${fmt(t.sell)}</div>
-        <div class="${t.profit>=0?'profit-pos':'profit-neg'}">${fmt(t.profit)}</div>
+        <div class="${t.profit>=0?'profit-pos':'profit-neg'}">${voided ? 'void' : fmt(t.profit)}</div>
         <div class="row-actions">
           ${t.screenshot ? `<img class="thumb" src="${t.screenshot}" data-view="${t.id}">` : ''}
           <button data-view="${t.id}" title="View details">👁</button>
-          <button data-receipt="${t.id}" title="Copy shareable receipt">✉️</button>
-          <button data-del="${t.id}" title="Delete">🗑</button>
+          ${!voided ? `<button data-receipt="${t.id}" title="Copy shareable receipt">✉️</button>` : ''}
+          ${!voided ? `<button data-del="${t.id}" title="Delete (removes from Sheet, keeps here marked red)">🗑</button>` : ''}
         </div>
-        <div class="ev-sub" style="grid-column:1/-1;font-size:11px;">${getSyncUrl() ? (t.synced ? '☁️ Synced' : '⏳ Not synced yet') : ''}</div>
+        <div class="ev-sub" style="grid-column:1/-1;font-size:11px;">${voided ? 'Removed from Google Sheet' : (getSyncUrl() ? (t.synced ? '☁️ Synced' : '⏳ Not synced yet') : '')}</div>
       </div>`;
     });
     table.innerHTML = html;
@@ -757,10 +830,14 @@
       copyReceipt(el.dataset.receipt);
     }));
     table.querySelectorAll('[data-del]').forEach(el=>el.addEventListener('click', ()=>{
-      if(!confirm('Delete this transaction? This cannot be undone.')) return;
-      txns = txns.filter(t=>t.id !== el.dataset.del);
+      if(!confirm('Delete this sale? It will be permanently removed from your Google Sheet, but stays here marked red for your own records.')) return;
+      const t = txns.find(t=>t.id === el.dataset.del);
+      if(!t) return;
+      t.status = 'Deleted';
+      t.synced = false;
       LS.set('jj_transactions', txns);
-      renderLedger(); renderSummary();
+      deleteFromSheet(t.id);
+      renderLedger(); renderSummary(); renderEditSelect();
     }));
   }
 
@@ -848,11 +925,13 @@
     if(t.screenshot){ img.src = t.screenshot; img.style.display='block'; } else { img.style.display='none'; }
     document.getElementById('modalReceiptBtn').onclick = ()=>copyReceipt(t.id);
     document.getElementById('modalDeleteBtn').onclick = ()=>{
-      if(!confirm('Delete this transaction?')) return;
-      txns = txns.filter(x=>x.id!==id);
+      if(!confirm('Delete this sale? It will be permanently removed from your Google Sheet, but stays here marked red for your own records.')) return;
+      t.status = 'Deleted';
+      t.synced = false;
       LS.set('jj_transactions', txns);
+      deleteFromSheet(t.id);
       modalBg.classList.remove('show');
-      renderLedger(); renderSummary();
+      renderLedger(); renderSummary(); renderEditSelect();
     };
     modalBg.classList.add('show');
   }
@@ -863,6 +942,7 @@
   function renderSummary(){
     let revenue=0, cost=0, profit=0, tickets=0, pending=0;
     txns.forEach(t=>{
+      if(isVoidStatus(t.status)) return; // deleted/cancelled sales don't count towards totals
       revenue += t.sell * t.qty;
       cost += t.buy * t.qty;
       profit += t.profit;
@@ -901,7 +981,7 @@
         txns = data.transactions || [];
         LS.set('jj_venues', venues);
         LS.set('jj_transactions', txns);
-        renderVenueSelects(); renderVenueList(); renderLedger(); renderSummary();
+        renderVenueSelects(); renderVenueList(); renderLedger(); renderSummary(); renderEditSelect();
         alert('Backup restored.');
       }catch(err){
         alert('Could not read that file — make sure it is a Jalsa Junction backup JSON.');
@@ -916,8 +996,7 @@
   renderLedger();
   renderSummary();
   updateProfitPreview();
-  document.getElementById('syncUrl').value = getSyncUrl();
-  renderSyncStatus();
+  renderEditSelect();
 })();
 </script>
 </body>
