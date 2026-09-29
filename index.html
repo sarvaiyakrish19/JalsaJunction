@@ -1291,7 +1291,7 @@
         <div>${fmt(t.buy)} → ${fmt(t.sell)}</div>
         <div class="${t.profit>=0?'profit-pos':'profit-neg'}">${voided ? 'void' : fmt(t.profit)}</div>
         <div class="row-actions">
-          ${t.screenshot ? `<img class="thumb" src="${t.screenshot}" data-view="${t.id}">` : ''}
+          ${t.screenshot ? `<img class="thumb" src="${normalizeScreenshotUrl(t.screenshot)}" data-view="${t.id}">` : ''}
           <button data-view="${t.id}" title="View details">👁</button>
           ${!voided ? `<button data-receipt="${t.id}" title="Copy shareable receipt">✉️</button>` : ''}
           ${!voided ? `<button data-message="${t.id}" title="Send message to customer">💬</button>` : ''}
@@ -1612,6 +1612,7 @@
 
       if(!LS.set('jj_venues', venues)) throw new Error('Could not save venues locally.');
       if(!LS.set('jj_transactions', txns)) throw new Error('Could not save transactions locally.');
+      fixImportedScreenshotUrls();
       if(!LS.set('jj_nextTxnId', nextTxnId)) throw new Error('Could not save transaction ID locally.');
 
       localStorage.setItem(SHEET_MIGRATION_KEY, 'done');
@@ -1852,29 +1853,92 @@
   }
 
   function refreshStats(){
-    const list=filtered();
+    const source = (typeof txns !== 'undefined' && Array.isArray(txns)) ? txns : [];
+    const q = (document.getElementById('jjSearchEnhanced')?.value || '').trim().toLowerCase();
+    const ev = document.getElementById('jjEventEnhanced')?.value || '';
+    const pay = document.getElementById('jjPaymentEnhanced')?.value || '';
+    const st = document.getElementById('jjStatusEnhanced')?.value || '';
+
+    const list = source.filter(t=>{
+      const del = isDeleted(t);
+      const hay = [
+        t.buyer,t.customerName,t.name,t.contact,t.phone,
+        eventLabel(t),t.passType,t.pass,t.notes
+      ].filter(Boolean).join(' ').toLowerCase();
+
+      if(q && !hay.includes(q)) return false;
+      if(ev && eventLabel(t)!==ev) return false;
+      if(pay && paymentLabel(t)!==pay) return false;
+      if(st==='deleted' && !del) return false;
+      if(st==='active' && del) return false;
+      return true;
+    });
+
     let revenue=0,cost=0,tickets=0,pending=0;
+
     list.forEach(t=>{
-      const q=Number(t.qty)||1;
+      const qty=Number(t.qty)||1;
       const sell=Number(t.sell)||0;
       const buy=Number(t.buy||t.cost)||0;
-      revenue+=sell*q;
-      cost+=buy*q;
-      tickets+=q;
-      const st=String(t.status||t.paymentStatus||'').toLowerCase();
-      if(st.includes('pending')){
-        pending+=sell*q;
-      }else if(st.includes('partial')){
-        pending+=Math.max(0,(sell*q)-(Number(t.paid)||Number(t.amountPaid)||0));
+
+      revenue += sell*qty;
+      cost += buy*qty;
+      tickets += qty;
+
+      const status=String(t.status||t.paymentStatus||'').toLowerCase();
+
+      if(status.includes('pending')){
+        pending += sell*qty;
+      }else if(status.includes('partial')){
+        pending += Math.max(0,(sell*qty)-(Number(t.paid)||Number(t.amountPaid)||0));
       }
     });
-    const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
+
+    const set=(id,v)=>{
+      const el=document.getElementById(id);
+      if(el) el.textContent=v;
+    };
+
     set('jjRevenueEnhanced',money(revenue));
     set('jjCostEnhanced',money(cost));
     set('jjProfitEnhanced',money(revenue-cost));
     set('jjTicketsEnhanced',tickets);
     set('jjPendingEnhanced',money(pending));
     set('jjFilteredCount',`${list.length} sale${list.length===1?'':'s'}`);
+  }
+
+  function normalizeScreenshotUrl(value){
+    const raw=String(value||'').trim();
+
+    if(!raw || raw==='(no screenshot)') return '';
+    if(raw.startsWith('data:image/')) return raw;
+
+    const match=raw.match(/\/d\/([a-zA-Z0-9_-]+)/);
+
+    if(match){
+      return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w800`;
+    }
+
+    return raw;
+  }
+
+  function fixImportedScreenshotUrls(){
+    if(typeof txns==='undefined' || !Array.isArray(txns)) return;
+
+    let changed=false;
+
+    txns.forEach(t=>{
+      if(t.screenshot){
+        const fixed=normalizeScreenshotUrl(t.screenshot);
+
+        if(fixed && fixed!==t.screenshot){
+          t.screenshot=fixed;
+          changed=true;
+        }
+      }
+    });
+
+    if(changed) LS.set('jj_transactions',txns);
   }
 
   window.jjOpenSaleDetails=function(id){
@@ -1958,7 +2022,9 @@
 
   function refreshAll(){
     populateEvents();
+    fixImportedScreenshotUrls();
     refreshStats();
+    renderLedger();
     setTimeout(enhanceRenderedRows,50);
   }
 
