@@ -1181,6 +1181,140 @@
     return (url && url.indexOf('PASTE_YOUR') === 0) ? '' : url;
   }
 
+  function normalizeScreenshotUrl(value){
+    const raw = String(value || '').trim();
+    if(!raw || raw === '(no screenshot)') return '';
+    if(raw.startsWith('data:image/')) return raw;
+    const match = raw.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    if(match) return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w1200`;
+    return raw;
+  }
+
+  function sheetDate(value){
+    if(!value) return '';
+    const d = new Date(value);
+    return Number.isNaN(d.getTime()) ? String(value).slice(0,10) : d.toISOString().slice(0,10);
+  }
+
+  function sheetNumber(value, fallback=0){
+    const n = Number(value);
+    return Number.isFinite(n) ? n : fallback;
+  }
+
+  function migrateRowsIntoLocalApp(rows){
+    if(!Array.isArray(rows)) throw new Error('Google Sheet returned an unexpected response.');
+
+    const imported = [];
+    const seen = new Set();
+
+    rows.forEach(row=>{
+      const id = String(row['Txn ID'] ?? '').trim();
+      if(!id || seen.has(id)) return;
+      seen.add(id);
+
+      const venueLabel = String(row['Venue'] ?? 'Imported Event').trim() || 'Imported Event';
+      let venue = venues.find(v => String(v.label || '').toLowerCase() === venueLabel.toLowerCase());
+      if(!venue){
+        const parts = venueLabel.split(' — ');
+        venue = {
+          id: 'sheet-' + Math.random().toString(36).slice(2,10),
+          singer: (parts[0] || 'Imported Event').trim(),
+          venue: (parts.slice(1).join(' — ') || 'Imported Venue').trim(),
+          city: 'Mumbai'
+        };
+        venues.push(venue);
+      }
+
+      const screenshot = normalizeScreenshotUrl(row['Screenshot Link']);
+      const qty = sheetNumber(row['Qty'], 1);
+      const buy = sheetNumber(row['Buy Price']);
+      const sell = sheetNumber(row['Sell Price']);
+      const profit = row['Profit'] === '' || row['Profit'] == null ? (sell-buy)*qty : sheetNumber(row['Profit']);
+
+      imported.push({
+        id,
+        venueId: venue.id,
+        venueLabel,
+        passType: String(row['Pass Type'] ?? '').trim(),
+        qty,
+        eventDate: sheetDate(row['Event Date']),
+        dateSold: sheetDate(row['Date Sold']),
+        buy,
+        sell,
+        profit,
+        buyer: String(row['Buyer'] ?? '').trim(),
+        contact: String(row['Contact'] ?? '').trim(),
+        method: String(row['Payment Method'] ?? '').trim(),
+        account: String(row['Account'] ?? '').trim(),
+        status: String(row['Status'] ?? '').trim(),
+        promoter: String(row['Promoter'] ?? '').trim(),
+        notes: String(row['Notes'] ?? '').trim(),
+        screenshot: screenshot || null,
+        synced: true
+      });
+    });
+
+    const maxId = imported.reduce((max,t)=>{
+      const n = parseInt(t.id,10);
+      return Number.isFinite(n) ? Math.max(max,n) : max;
+    },0);
+
+    txns = imported;
+    nextTxnId = maxId + 1;
+
+    LS.set('jj_venues', venues);
+    LS.set('jj_transactions', txns);
+    LS.set('jj_nextTxnId', nextTxnId);
+    localStorage.setItem('jj_sheet_migrated_v1','done');
+
+    renderVenueSelects();
+    renderVenueList();
+    renderLedger();
+    renderSummary();
+    renderEditSelect();
+
+    return imported.length;
+  }
+
+  function loadSheetOnceIfLocalDataMissing(){
+    if(txns.length > 0) return;
+
+    const url = getSyncUrl();
+    if(!url) return;
+
+    const callbackName = 'jjAutoRestore_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+    const script = document.createElement('script');
+    const separator = url.includes('?') ? '&' : '?';
+    let finished = false;
+
+    const cleanup = ()=>{
+      if(finished) return;
+      finished = true;
+      try{ delete window[callbackName]; }catch(e){ window[callbackName] = undefined; }
+      script.remove();
+    };
+
+    const timer = setTimeout(()=>cleanup(),20000);
+
+    window[callbackName] = rows=>{
+      clearTimeout(timer);
+      try{
+        if(Array.isArray(rows) && rows.length){
+          const count = migrateRowsIntoLocalApp(rows);
+          showToast(`☁️ Restored ${count} sales from Google Sheet.`);
+        }
+      }catch(err){
+        console.error('Automatic Sheet restore failed:',err);
+      }finally{
+        cleanup();
+      }
+    };
+
+    script.onerror = ()=>{ clearTimeout(timer); cleanup(); };
+    script.src = url + separator + 'callback=' + encodeURIComponent(callbackName) + '&_=' + Date.now();
+    document.head.appendChild(script);
+  }
+
   function syncTransaction(t){
     const url = getSyncUrl();
     if(!url) return;
@@ -1291,7 +1425,7 @@
         <div>${fmt(t.buy)} → ${fmt(t.sell)}</div>
         <div class="${t.profit>=0?'profit-pos':'profit-neg'}">${voided ? 'void' : fmt(t.profit)}</div>
         <div class="row-actions">
-          ${t.screenshot ? `<img class="thumb" src="${normalizeScreenshotUrl(t.screenshot)}" data-view="${t.id}">` : ''}
+          ${t.screenshot ? `<img class="thumb" src="${normalizeScreenshotUrl(t.screenshot)}" data-photo="${t.id}" title="Open screenshot">` : ''}
           <button data-view="${t.id}" title="View details">👁</button>
           ${!voided ? `<button data-receipt="${t.id}" title="Copy shareable receipt">✉️</button>` : ''}
           ${!voided ? `<button data-message="${t.id}" title="Send message to customer">💬</button>` : ''}
@@ -1301,6 +1435,11 @@
       </div>`;
     });
     table.innerHTML = html;
+    table.querySelectorAll('[data-photo]').forEach(el=>el.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      const src = el.getAttribute('src');
+      if(src) window.open(src,'_blank','noopener');
+    }));
     table.querySelectorAll('[data-view]').forEach(el=>el.addEventListener('click', ()=>openModal(el.dataset.view)));
     table.querySelectorAll('[data-receipt]').forEach(el=>el.addEventListener('click', (e)=>{
       e.stopPropagation();
@@ -1680,6 +1819,9 @@
   renderSummary();
   updateProfitPreview();
   renderEditSelect();
+
+  // Restore historical Sheet data automatically if this browser has no local transactions.
+  setTimeout(loadSheetOnceIfLocalDataMissing, 500);
 })();
 </script>
 
@@ -1758,8 +1900,7 @@
   };
 
   window.jjSendCustomerMessage = function(id){
-    const t=(typeof txns!=='undefined' && Array.isArray(txns))
-      ? txns.find(x=>String(x.id)===String(id)) : null;
+    const t=allTxns().find(x=>String(x.id)===String(id)) || null;
     if(!t){ if(typeof showToast==='function') showToast('Sale not found.'); return; }
 
     const msg=window.jjBuildCustomerMessage(t);
@@ -1795,12 +1936,18 @@
 <script>
 (function(){
   function allTxns(){
-    return (typeof txns!=='undefined' && Array.isArray(txns)) ? txns : [];
+    try{
+      const raw=localStorage.getItem('jj_transactions');
+      const data=raw ? JSON.parse(raw) : [];
+      return Array.isArray(data) ? data : [];
+    }catch(e){ return []; }
   }
 
   function eventLabel(t){
     try{
-      const v=venues.find(v=>String(v.id)===String(t.venueId));
+      let vs=[];
+      try{ vs=JSON.parse(localStorage.getItem('jj_venues')||'[]'); }catch(e){}
+      const v=vs.find(v=>String(v.id)===String(t.venueId));
       return v ? (v.singer || v.eventName || v.name || t.venueLabel || 'Event') : (t.venueLabel || 'Event');
     }catch(e){return t.venueLabel || 'Event';}
   }
@@ -1853,7 +2000,7 @@
   }
 
   function refreshStats(){
-    const source = (typeof txns !== 'undefined' && Array.isArray(txns)) ? txns : [];
+    const source = allTxns();
     const q = (document.getElementById('jjSearchEnhanced')?.value || '').trim().toLowerCase();
     const ev = document.getElementById('jjEventEnhanced')?.value || '';
     const pay = document.getElementById('jjPaymentEnhanced')?.value || '';
@@ -2022,9 +2169,7 @@
 
   function refreshAll(){
     populateEvents();
-    fixImportedScreenshotUrls();
     refreshStats();
-    renderLedger();
     setTimeout(enhanceRenderedRows,50);
   }
 
