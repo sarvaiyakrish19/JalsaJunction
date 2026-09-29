@@ -728,6 +728,13 @@
         </div>
       </div>
       <div class="jj-manage-card">
+        <h3>☁️ One-Time Sheet Migration</h3>
+        <p>Import your existing Google Sheet sales into this device. This does not delete or change the Sheet.</p>
+        <div class="manage-actions">
+          <button type="button" class="btn" id="migrateSheetBtn">⬇️ Import Existing Sheet Sales</button>
+        </div>
+      </div>
+      <div class="jj-manage-card">
         <h3>💾 Backup &amp; Restore</h3>
         <p>Use the original export/import tools to protect your local ledger data.</p>
         <div class="manage-actions">
@@ -1460,6 +1467,143 @@
     document.getElementById('totalTickets').textContent = tickets;
     document.getElementById('totalPending').textContent = fmt(pending);
   }
+
+  // ---------- One-Time Google Sheet Migration ----------
+  const SHEET_MIGRATION_KEY = 'jj_sheet_migrated_v1';
+
+  function migrationDate(value){
+    if(!value) return '';
+    const d = new Date(value);
+    if(Number.isNaN(d.getTime())) return String(value).slice(0,10);
+    return d.toISOString().slice(0,10);
+  }
+
+  function migrationNumber(value, fallback=0){
+    const n = Number(value);
+    return Number.isFinite(n) ? n : fallback;
+  }
+
+  function migrationVenue(venueLabel){
+    const label = String(venueLabel || 'Imported Event').trim() || 'Imported Event';
+    let v = venues.find(x => String(x.label || '').toLowerCase() === label.toLowerCase());
+    if(v) return v;
+
+    v = venues.find(x => `${x.singer || ''} — ${x.venue || ''}`.trim().toLowerCase() === label.toLowerCase());
+    if(v) return v;
+
+    const parts = label.split(' — ');
+    const singer = (parts[0] || 'Imported Event').trim();
+    const venueName = (parts.slice(1).join(' — ') || 'Imported Venue').trim();
+    const id = 'sheet-' + Math.random().toString(36).slice(2,10);
+
+    v = {id, singer, venue: venueName, city: 'Mumbai'};
+    venues.push(v);
+    return v;
+  }
+
+  async function migrateFromGoogleSheet(){
+    const btn = document.getElementById('migrateSheetBtn');
+    if(!btn) return;
+
+    if(localStorage.getItem(SHEET_MIGRATION_KEY) === 'done'){
+      alert('Sheet migration has already been completed on this device.');
+      return;
+    }
+
+    if(txns.length){
+      const proceed = confirm(
+        'This device already has local sales. The Sheet migration will replace the local sales with the existing Google Sheet sales. Continue?'
+      );
+      if(!proceed) return;
+    }
+
+    const url = getSyncUrl();
+    if(!url){
+      alert('Google Sheet sync URL is not configured.');
+      return;
+    }
+
+    btn.disabled = true;
+    const originalText = btn.textContent;
+    btn.textContent = '⏳ Importing...';
+
+    try{
+      const response = await fetch(url, { method: 'GET', cache: 'no-store' });
+      if(!response.ok) throw new Error('Could not read the Google Sheet endpoint.');
+
+      const data = await response.json();
+
+      if(!Array.isArray(data)){
+        throw new Error(data && data.message ? data.message : 'Unexpected response from Google Sheet.');
+      }
+
+      const imported = [];
+      const seen = new Set();
+
+      data.forEach(row => {
+        const id = String(row['Txn ID'] ?? '').trim();
+        if(!id || seen.has(id)) return;
+        seen.add(id);
+
+        const venueLabel = String(row['Venue'] ?? 'Imported Event').trim();
+        const venue = migrationVenue(venueLabel);
+        const screenshotLink = String(row['Screenshot Link'] ?? '').trim();
+
+        imported.push({
+          id,
+          venueId: venue.id,
+          venueLabel,
+          passType: String(row['Pass Type'] ?? '').trim(),
+          qty: migrationNumber(row['Qty'], 1),
+          eventDate: migrationDate(row['Event Date']),
+          dateSold: migrationDate(row['Date Sold']),
+          buy: migrationNumber(row['Buy Price']),
+          sell: migrationNumber(row['Sell Price']),
+          profit: migrationNumber(row['Profit']),
+          buyer: String(row['Buyer'] ?? '').trim(),
+          contact: String(row['Contact'] ?? '').trim(),
+          method: String(row['Payment Method'] ?? '').trim(),
+          account: String(row['Account'] ?? '').trim(),
+          status: String(row['Status'] ?? '').trim(),
+          promoter: String(row['Promoter'] ?? '').trim(),
+          notes: String(row['Notes'] ?? '').trim(),
+          screenshot: screenshotLink && screenshotLink !== '(no screenshot)' ? screenshotLink : null,
+          synced: true
+        });
+      });
+
+      const maxId = imported.reduce((max, t) => {
+        const n = parseInt(t.id, 10);
+        return Number.isFinite(n) ? Math.max(max, n) : max;
+      }, 0);
+
+      txns = imported;
+      nextTxnId = maxId + 1;
+
+      if(!LS.set('jj_venues', venues)) throw new Error('Could not save venues locally.');
+      if(!LS.set('jj_transactions', txns)) throw new Error('Could not save transactions locally.');
+      if(!LS.set('jj_nextTxnId', nextTxnId)) throw new Error('Could not save transaction ID locally.');
+
+      localStorage.setItem(SHEET_MIGRATION_KEY, 'done');
+
+      renderVenueSelects();
+      renderVenueList();
+      renderLedger();
+      renderSummary();
+      renderEditSelect();
+      refreshAll?.();
+
+      btn.textContent = '✅ Migration Complete';
+      alert(`Migration complete! ${imported.length} sales imported from your Google Sheet.`);
+    }catch(err){
+      console.error('Sheet migration failed:', err);
+      btn.disabled = false;
+      btn.textContent = originalText;
+      alert('Migration failed: ' + err.message + '\\n\\nYour Google Sheet was not changed.');
+    }
+  }
+
+  document.getElementById('migrateSheetBtn')?.addEventListener('click', migrateFromGoogleSheet);
 
   // ---------- Export / Import ----------
   document.getElementById('exportBtn').addEventListener('click', ()=>{
