@@ -214,6 +214,293 @@
     .txn-row:not(.head){padding:14px;border-radius:10px;margin-bottom:8px;border:1px solid var(--paper-line);}
     .thali{flex:1 1 100%;}
   }
+
+  /* ---------- True 3-page layout ---------- */
+  .tabs{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:10px;
+    margin:22px 0;
+    border:0;
+  }
+  .tab{
+    padding:13px 16px;
+    background:var(--ink-2);
+    border:1px solid var(--border);
+    border-radius:12px;
+    color:var(--cream-dim);
+    font-weight:700;
+    font-size:14px;
+    cursor:pointer;
+  }
+  .tab.active{
+    color:#fff;
+    background:var(--maroon);
+    border-color:var(--gold);
+    box-shadow:0 0 0 1px rgba(217,165,68,.15);
+  }
+  .panel{display:none;}
+  .panel.active{display:block;}
+
+  /* Only the Manage page exposes backup/lock controls. */
+  #jjHeaderActions{display:none;}
+  body[data-jj-page="venues"] #jjHeaderActions{display:flex;}
+
+  .overview-heading,.manage-heading{
+    margin:0 0 16px;
+  }
+  .overview-heading h2,.manage-heading h2{
+    margin:0 0 5px;
+    font-size:21px;
+  }
+  .overview-heading p,.manage-heading p{
+    margin:0;
+    color:var(--cream-dim);
+    font-size:13px;
+  }
+
+  /* Dark Overview: summary + filters + sales table all belong to Overview. */
+  #panel-ledger{
+    background:#111820;
+    border:1px solid #2b3943;
+    border-radius:18px;
+    padding:18px;
+  }
+  #panel-ledger .thali-row{
+    margin-top:0;
+  }
+  #panel-ledger .ledger-controls input,
+  #panel-ledger .ledger-controls select{
+    background:#1b2730;
+    border-color:#3a4b57;
+    color:#fff;
+  }
+  #panel-ledger .paper{
+    background:#101820;
+  }
+  #panel-ledger .txn-row{
+    color:#f4f7f8;
+    border-color:#2c3943;
+  }
+  #panel-ledger .txn-row.head{
+    background:#1d2a34;
+    color:#fff;
+  }
+  #panel-ledger .txn-row:nth-child(even):not(.head):not(.status-red){
+    background:#17232c;
+  }
+  #panel-ledger .txn-row .ev-sub{
+    color:#aebbc3;
+  }
+
+  @media(max-width:700px){
+    .tabs{grid-template-columns:1fr;}
+  }
+
+
+  body[data-jj-page="add"] footer,
+  body[data-jj-page="ledger"] footer{display:none;}
+
+
+/* ============================================================
+   JALSA JUNCTION — FINAL ENHANCEMENT LAYER
+   UI only. Existing storage/sync/data functions are preserved.
+   ============================================================ */
+
+:root{
+  --jj-teal:#0fae9b;
+  --jj-blue:#3b82a0;
+  --jj-navy:#092a4a;
+  --jj-bg:#f6f9f8;
+  --jj-border:#dceae7;
+}
+
+.jj-enhanced-card{
+  background:#fff;
+  border:1px solid var(--jj-border);
+  border-radius:16px;
+  padding:16px;
+  margin-bottom:16px;
+}
+
+.jj-stat-grid{
+  display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:12px;
+  margin-bottom:18px;
+}
+.jj-stat-card{
+  background:#18242d;
+  border:1px solid #344550;
+  border-radius:14px;
+  padding:15px;
+  min-width:0;
+}
+.jj-stat-card .jj-stat-label{
+  color:#aebbc3;
+  font-size:12px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+}
+.jj-stat-card .jj-stat-value{
+  color:#fff;
+  font-size:21px;
+  font-weight:900;
+  margin-top:6px;
+  word-break:break-word;
+}
+
+.jj-filter-bar{
+  display:grid;
+  grid-template-columns:1.5fr 1fr 1fr 1fr auto;
+  gap:10px;
+  margin-bottom:15px;
+}
+.jj-filter-bar input,.jj-filter-bar select{
+  width:100%;
+  box-sizing:border-box;
+  border-radius:10px;
+  padding:10px 12px;
+  background:#18242d;
+  color:#fff;
+  border:1px solid #344550;
+  outline:none;
+}
+.jj-filter-bar input::placeholder{color:#8fa0aa}
+.jj-filter-clear{
+  border:1px solid #536673;
+  background:#263640;
+  color:#fff;
+  border-radius:10px;
+  padding:10px 14px;
+  cursor:pointer;
+  font-weight:800;
+}
+
+.jj-overview-title{
+  display:flex;
+  justify-content:space-between;
+  gap:15px;
+  align-items:flex-start;
+  margin-bottom:15px;
+}
+.jj-overview-title h2{margin:0;color:#fff}
+.jj-overview-title p{margin:5px 0 0;color:#aebbc3;font-size:13px}
+
+.jj-sale-modal-backdrop{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.68);
+  z-index:9999;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:18px;
+}
+.jj-sale-modal-backdrop.open{display:flex}
+.jj-sale-modal{
+  width:min(720px,100%);
+  max-height:90vh;
+  overflow:auto;
+  background:#fff;
+  color:#092a4a;
+  border-radius:18px;
+  box-shadow:0 25px 70px rgba(0,0,0,.35);
+}
+.jj-sale-modal-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:18px 20px;
+  border-bottom:1px solid #dceae7;
+}
+.jj-sale-modal-head h3{margin:0}
+.jj-close{
+  border:0;background:#eef5f3;color:#092a4a;
+  border-radius:10px;width:38px;height:38px;cursor:pointer;
+  font-size:20px;font-weight:900;
+}
+.jj-sale-modal-body{
+  padding:20px;
+}
+.jj-detail-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+}
+.jj-detail-item{
+  background:#f6f9f8;
+  border:1px solid #dceae7;
+  border-radius:12px;
+  padding:12px;
+}
+.jj-detail-item.full{grid-column:1/-1}
+.jj-detail-label{
+  font-size:11px;
+  color:#63808d;
+  text-transform:uppercase;
+  font-weight:800;
+  letter-spacing:.04em;
+}
+.jj-detail-value{
+  margin-top:4px;
+  font-weight:800;
+  color:#092a4a;
+  white-space:pre-wrap;
+  word-break:break-word;
+}
+
+.jj-manage-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:15px;
+}
+.jj-manage-card{
+  background:#fff;
+  border:1px solid #dceae7;
+  border-radius:16px;
+  padding:17px;
+}
+.jj-manage-card h3{margin:0 0 6px;color:#092a4a}
+.jj-manage-card p{margin:0 0 14px;color:#63808d;font-size:13px}
+.jj-manage-card .manage-actions{
+  display:flex;gap:8px;flex-wrap:wrap;
+}
+
+.jj-mobile-actions{
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+}
+.jj-mobile-actions button{
+  min-width:38px;
+  min-height:36px;
+}
+
+@media(max-width:900px){
+  .jj-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .jj-filter-bar{grid-template-columns:1fr 1fr}
+  .jj-filter-bar input{grid-column:1/-1}
+  .jj-manage-grid{grid-template-columns:1fr}
+}
+@media(max-width:600px){
+  .jj-stat-grid{grid-template-columns:1fr 1fr}
+  .jj-stat-card .jj-stat-value{font-size:18px}
+  .jj-detail-grid{grid-template-columns:1fr}
+  .jj-detail-item.full{grid-column:auto}
+  .jj-filter-bar{grid-template-columns:1fr}
+  .jj-filter-bar input{grid-column:auto}
+  #panel-ledger{padding:12px}
+  .jj-overview-title{flex-direction:column}
+  .jj-sale-modal-backdrop{padding:8px}
+}
+
+
+  body[data-jj-page="add"] footer,
+  body[data-jj-page="ledger"] footer{display:none;}
+
 </style>
 </head>
 <body>
@@ -259,7 +546,7 @@
         <p>Navratri 2026 · Ticket Ledger</p>
       </div>
     </div>
-    <div class="header-actions">
+    <div class="header-actions" id="jjHeaderActions">
       <button class="icon-btn" id="exportBtn" title="Export backup (JSON)">⬇</button>
       <button class="icon-btn" id="importBtn" title="Import backup (JSON)">⬆</button>
       <button class="icon-btn" id="lockNowBtn" title="Lock now">🔒</button>
@@ -267,6 +554,15 @@
     </div>
   </header>
 
+  <!-- THREE PAGE NAVIGATION -->
+  <div class="tabs">
+    <button class="tab active" data-tab="add">➕ Add Sale</button>
+    <button class="tab" data-tab="ledger">📊 Overview</button>
+    <button class="tab" data-tab="venues">⚙️ Manage</button>
+  </div>
+
+  <!-- OVERVIEW PAGE -->
+  <div class="panel" id="panel-ledger">
   <!-- BALANCE -->
   <div class="thali-row">
     <div class="thali">
@@ -281,15 +577,43 @@
     </div>
   </div>
 
-  <!-- TABS -->
-  <div class="tabs">
-    <button class="tab active" data-tab="ledger">Sales Till Now</button>
-    <button class="tab" data-tab="add">Add Sale</button>
-    <button class="tab" data-tab="venues">Edit</button>
-  </div>
+    <div class="overview-heading">
+      <h2>Sales &amp; Ticket Details</h2>
+      <p>View sales, filter transactions, and check revenue, cost, profit and pending payments.</p>
+    </div>
+    <div class="jj-overview-title">
+      <div>
+        <h2>Sales &amp; Ticket Details</h2>
+        <p>Filter your live sales without changing the underlying Google Sheets data.</p>
+      </div>
+      <div id="jjFilteredCount" style="color:#aebbc3;font-size:13px;font-weight:800"></div>
+    </div>
 
-  <!-- LEDGER PANEL -->
-  <div class="panel active" id="panel-ledger">
+    <div class="jj-stat-grid">
+      <div class="jj-stat-card"><div class="jj-stat-label">Revenue</div><div class="jj-stat-value" id="jjRevenueEnhanced">₹0</div></div>
+      <div class="jj-stat-card"><div class="jj-stat-label">Cost</div><div class="jj-stat-value" id="jjCostEnhanced">₹0</div></div>
+      <div class="jj-stat-card"><div class="jj-stat-label">Profit</div><div class="jj-stat-value" id="jjProfitEnhanced">₹0</div></div>
+      <div class="jj-stat-card"><div class="jj-stat-label">Tickets</div><div class="jj-stat-value" id="jjTicketsEnhanced">0</div></div>
+      <div class="jj-stat-card"><div class="jj-stat-label">Pending</div><div class="jj-stat-value" id="jjPendingEnhanced">₹0</div></div>
+    </div>
+
+    <div class="jj-filter-bar">
+      <input id="jjSearchEnhanced" type="search" placeholder="Search customer, event, pass, phone...">
+      <select id="jjEventEnhanced"><option value="">All Events</option></select>
+      <select id="jjPaymentEnhanced">
+        <option value="">All Payments</option>
+        <option value="paid">Paid</option>
+        <option value="pending">Pending</option>
+        <option value="partial">Partial</option>
+      </select>
+      <select id="jjStatusEnhanced">
+        <option value="">All Status</option>
+        <option value="active">Active</option>
+        <option value="deleted">Deleted</option>
+      </select>
+      <button type="button" class="jj-filter-clear" id="jjClearFilters">Clear</button>
+    </div>
+
     <div class="ledger-controls">
       <input type="text" id="searchBox" placeholder="Search buyer, promoter, pass type...">
       <select id="filterVenue"><option value="">All venues</option></select>
@@ -298,7 +622,7 @@
   </div>
 
   <!-- ADD SALE PANEL -->
-  <div class="panel" id="panel-add">
+  <div class="panel active" id="panel-add">
     <div class="card">
       <div class="form-grid" id="saleForm">
         <div class="field full">
@@ -381,8 +705,45 @@
     </div>
   </div>
 
-  <!-- VENUES PANEL -->
+  <!-- MANAGE PAGE -->
   <div class="panel" id="panel-venues">
+    <div class="manage-heading">
+      <h2>Event &amp; Sale Management</h2>
+      <p>Add or edit events, and load an existing sale for editing.</p>
+    </div>
+    <div class="jj-manage-grid">
+      <div class="jj-manage-card">
+        <h3>🎪 Event Management</h3>
+        <p>Add new events and maintain existing event/venue information.</p>
+        <div class="manage-actions">
+          <button type="button" class="btn" onclick="document.querySelector('#addVenueBtn,[id*=addVenue]')?.click()">➕ Add Event</button>
+          <button type="button" class="btn" onclick="document.querySelector('#venuesList,.venues-list')?.scrollIntoView({behavior:'smooth'})">📋 Existing Events</button>
+        </div>
+      </div>
+      <div class="jj-manage-card">
+        <h3>🛠️ Sale Management</h3>
+        <p>Open an existing booking from Overview and edit it using the original sale form.</p>
+        <div class="manage-actions">
+          <button type="button" class="btn" onclick="document.querySelector('.tab[data-tab=&quot;ledger&quot;]')?.click()">📊 Go to Overview</button>
+        </div>
+      </div>
+      <div class="jj-manage-card">
+        <h3>💾 Backup &amp; Restore</h3>
+        <p>Use the original export/import tools to protect your local ledger data.</p>
+        <div class="manage-actions">
+          <button type="button" class="btn" onclick="document.getElementById('exportBtn')?.click()">⬇ Export Backup</button>
+          <button type="button" class="btn" onclick="document.getElementById('importBtn')?.click()">⬆ Import Backup</button>
+        </div>
+      </div>
+      <div class="jj-manage-card">
+        <h3>🔒 Security</h3>
+        <p>Lock the ledger when you are finished working.</p>
+        <div class="manage-actions">
+          <button type="button" class="btn" onclick="document.getElementById('lockNowBtn')?.click()">🔒 Lock Now</button>
+        </div>
+      </div>
+    </div>
+
     <div class="card" style="margin-bottom:18px;">
       <div class="form-grid">
         <div class="field"><label>Singer / Artist</label><input type="text" id="v_singer" placeholder="e.g. Falguni Pathak"></div>
@@ -867,12 +1228,43 @@
   function renderLedger(){
     const search = document.getElementById('searchBox').value.toLowerCase();
     const filterV = document.getElementById('filterVenue').value;
+    const jjQ = (document.getElementById('jjSearchEnhanced')?.value || '').trim().toLowerCase();
+    const jjEvent = (document.getElementById('jjEventEnhanced')?.value || '');
+    const jjPayment = (document.getElementById('jjPaymentEnhanced')?.value || '');
+    const jjStatus = (document.getElementById('jjStatusEnhanced')?.value || '');
+
     let list = txns.filter(t=>{
       if(filterV && t.venueId !== filterV) return false;
+
       if(search){
-        const hay = `${t.buyer} ${t.promoter} ${t.passType} ${t.contact}`.toLowerCase();
+        const hay = `${t.buyer} ${t.promoter} ${t.passType} ${t.contact} ${t.venueLabel}`.toLowerCase();
         if(!hay.includes(search)) return false;
       }
+
+      if(jjQ){
+        const hay = [
+          t.buyer,t.promoter,t.passType,t.contact,t.venueLabel,
+          t.notes,t.method,t.account
+        ].filter(Boolean).join(' ').toLowerCase();
+        if(!hay.includes(jjQ)) return false;
+      }
+
+      if(jjEvent){
+        const v = venues.find(v=>String(v.id)===String(t.venueId));
+        const eventName = v ? (v.singer || v.eventName || v.name || t.venueLabel) : t.venueLabel;
+        if(eventName !== jjEvent) return false;
+      }
+
+      if(jjPayment){
+        const ps = String(t.status || t.paymentStatus || '').toLowerCase();
+        if(jjPayment === 'paid' && !ps.includes('paid')) return false;
+        if(jjPayment === 'pending' && !ps.includes('pending')) return false;
+        if(jjPayment === 'partial' && !ps.includes('partial')) return false;
+      }
+
+      if(jjStatus === 'deleted' && !isVoidStatus(t.status)) return false;
+      if(jjStatus === 'active' && isVoidStatus(t.status)) return false;
+
       return true;
     });
     const table = document.getElementById('ledgerTable');
@@ -895,6 +1287,7 @@
           ${t.screenshot ? `<img class="thumb" src="${t.screenshot}" data-view="${t.id}">` : ''}
           <button data-view="${t.id}" title="View details">👁</button>
           ${!voided ? `<button data-receipt="${t.id}" title="Copy shareable receipt">✉️</button>` : ''}
+          ${!voided ? `<button data-message="${t.id}" title="Send message to customer">💬</button>` : ''}
           ${!voided ? `<button data-del="${t.id}" title="Delete (removes from Sheet, keeps here marked red)">🗑</button>` : ''}
         </div>
         <div class="ev-sub" style="grid-column:1/-1;font-size:11px;">${voided ? 'Removed from Google Sheet' : (getSyncUrl() ? (t.synced ? '☁️ Synced' : '⏳ Not synced yet') : '')}</div>
@@ -906,6 +1299,36 @@
       e.stopPropagation();
       copyReceipt(el.dataset.receipt);
     }));
+
+    table.querySelectorAll('[data-message]').forEach(el=>el.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      const t = txns.find(x=>String(x.id)===String(el.dataset.message));
+      if(!t) return;
+      const v = venues.find(x=>x.id===t.venueId);
+      const msg = [
+        `Hi ${t.buyer || 'there'},`,
+        ``,
+        `🎟️ JALSA JUNCTION`,
+        `Your booking is confirmed!`,
+        ``,
+        `Event: ${v ? v.singer : (t.venueLabel || 'Event')}`,
+        v ? `Venue: ${v.venue}${v.city ? ', '+v.city : ''}` : '',
+        `Pass: ${t.passType || 'Ticket'}${t.qty>1 ? ' x'+t.qty : ''}`,
+        `Amount: ${fmt((t.sell||0)*(t.qty||1))}`,
+        `Payment Status: ${t.status || 'Paid'}`,
+        ``,
+        `For any issue or new booking, contact Krish Sarvaiya — JALSA JUNCTION.`,
+      ].filter(Boolean).join('\\n');
+      const phone = String(t.contact || '').replace(/\\D/g,'');
+      if(phone){
+        const intl = phone.startsWith('91') ? phone : '91' + phone.replace(/^0/,'');
+        window.open('https://wa.me/'+intl+'?text='+encodeURIComponent(msg), '_blank');
+      }else{
+        navigator.clipboard?.writeText(msg);
+        showToast('Customer message copied — no phone number saved for this sale.');
+      }
+    }));
+
     table.querySelectorAll('[data-del]').forEach(el=>el.addEventListener('click', ()=>{
       if(!confirm('Delete this sale? It will be permanently removed from your Google Sheet, but stays here marked red for your own records.')) return;
       const t = txns.find(t=>t.id === el.dataset.del);
@@ -920,6 +1343,10 @@
 
   document.getElementById('searchBox').addEventListener('input', renderLedger);
   document.getElementById('filterVenue').addEventListener('change', renderLedger);
+  ['jjSearchEnhanced','jjEventEnhanced','jjPaymentEnhanced','jjStatusEnhanced'].forEach(id=>{
+    document.getElementById(id)?.addEventListener('input', renderLedger);
+    document.getElementById(id)?.addEventListener('change', renderLedger);
+  });
 
   // ---------- Shareable receipt (customer-safe, no cost/profit/account/screenshot) ----------
   function buildReceiptText(t){
@@ -1080,5 +1507,294 @@
   renderEditSelect();
 })();
 </script>
+
+<script>
+(function(){
+  function syncPageChrome(){
+    const active = document.querySelector('.tab.active');
+    const page = active ? active.dataset.tab : 'add';
+    document.body.dataset.jjPage = page;
+  }
+
+  document.querySelectorAll('.tab').forEach(tab=>{
+    tab.addEventListener('click', function(){
+      setTimeout(syncPageChrome, 0);
+    });
+  });
+
+  window.addEventListener('DOMContentLoaded', function(){
+    // Force Add Sale as the opening page.
+    const addTab = document.querySelector('.tab[data-tab="add"]');
+    if(addTab) addTab.click();
+    syncPageChrome();
+  });
+})();
+</script>
+
+
+<script>
+(function(){
+  function jjVenueFor(t){
+    try{
+      return (typeof venues !== 'undefined' && Array.isArray(venues))
+        ? venues.find(v=>String(v.id)===String(t.venueId))
+        : null;
+    }catch(e){return null;}
+  }
+
+  function jjDateFor(t){
+    const raw = t.eventDate || t.event_date || t.date || t.bookingDate || '';
+    if(raw) return raw;
+    const v=jjVenueFor(t);
+    return v ? (v.date || v.eventDate || v.event_date || '') : '';
+  }
+
+  window.jjBuildCustomerMessage = function(t){
+    const v=jjVenueFor(t);
+    const customer=t.buyer || t.customerName || t.name || 'there';
+    const event=v ? (v.singer || v.eventName || v.name) : (t.venueLabel || t.event || 'Event');
+    const venue=v ? [v.venue,v.city].filter(Boolean).join(', ') : '';
+    const pass=t.passType || t.pass || 'Ticket';
+    const qty=t.qty || 1;
+    const date=jjDateFor(t) || 'As per booking';
+    const amount=(typeof fmt==='function') ? fmt((t.sell||0)*qty) : `₹${((t.sell||0)*qty).toLocaleString('en-IN')}`;
+
+    return [
+      '🎟️ JALSA JUNCTION',
+      'Booking Confirmed ✅',
+      '',
+      `Hi ${customer} 👋`,
+      'Your booking has been confirmed.',
+      '',
+      `🎤 Event: ${event}`,
+      venue ? `📍 Venue: ${venue}` : '',
+      `🎫 Pass: ${pass}${qty>1 ? ' x'+qty : ''}`,
+      `📅 Date: ${date}`,
+      `💰 Amount Paid: ${amount}`,
+      '',
+      'Thank you for booking with us! ❤️',
+      '',
+      '👤 Krish Sarvaiya',
+      '🎟️ JALSA JUNCTION',
+      '📞 Your Number',
+      '',
+      'For ticket issues, bookings or future events, feel free to contact us.'
+    ].filter(Boolean).join('\\n');
+  };
+
+  window.jjSendCustomerMessage = function(id){
+    const t=(typeof txns!=='undefined' && Array.isArray(txns))
+      ? txns.find(x=>String(x.id)===String(id)) : null;
+    if(!t){ if(typeof showToast==='function') showToast('Sale not found.'); return; }
+
+    const msg=window.jjBuildCustomerMessage(t);
+    const phone=String(t.contact || t.phone || t.mobile || '').replace(/\\D/g,'');
+    if(phone){
+      const intl=phone.startsWith('91') ? phone : '91'+phone.replace(/^0/,'');
+      window.open('https://wa.me/'+intl+'?text='+encodeURIComponent(msg),'_blank');
+    }else if(navigator.clipboard){
+      navigator.clipboard.writeText(msg).then(()=>{
+        if(typeof showToast==='function') showToast('Message copied — no customer phone number saved.');
+      });
+    }else{
+      window.prompt('Copy customer message:',msg);
+    }
+  };
+})();
+</script>
+
+
+<div id="jjSaleModal" class="jj-sale-modal-backdrop" aria-hidden="true">
+  <div class="jj-sale-modal" role="dialog" aria-modal="true" aria-labelledby="jjSaleModalTitle">
+    <div class="jj-sale-modal-head">
+      <h3 id="jjSaleModalTitle">Booking Details</h3>
+      <button type="button" class="jj-close" id="jjSaleModalClose">×</button>
+    </div>
+    <div class="jj-sale-modal-body">
+      <div id="jjSaleDetails" class="jj-detail-grid"></div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+(function(){
+  function allTxns(){
+    return (typeof txns!=='undefined' && Array.isArray(txns)) ? txns : [];
+  }
+
+  function eventLabel(t){
+    try{
+      const v=venues.find(v=>String(v.id)===String(t.venueId));
+      return v ? (v.singer || v.eventName || v.name || t.venueLabel || 'Event') : (t.venueLabel || 'Event');
+    }catch(e){return t.venueLabel || 'Event';}
+  }
+
+  function paymentLabel(t){
+    const s=String(t.status||t.paymentStatus||'').toLowerCase();
+    if(s.includes('pending')) return 'pending';
+    if(s.includes('partial')) return 'partial';
+    if(s.includes('paid')) return 'paid';
+    return s || 'paid';
+  }
+
+  function isDeleted(t){
+    return !!(t.deleted || t.voided || t.action==='delete');
+  }
+
+  function money(n){
+    return (typeof fmt==='function') ? fmt(Number(n)||0) : '₹'+(Number(n)||0).toLocaleString('en-IN');
+  }
+
+  function filtered(){
+    const q=(document.getElementById('jjSearchEnhanced')?.value||'').trim().toLowerCase();
+    const ev=document.getElementById('jjEventEnhanced')?.value||'';
+    const pay=document.getElementById('jjPaymentEnhanced')?.value||'';
+    const st=document.getElementById('jjStatusEnhanced')?.value||'';
+
+    return allTxns().filter(t=>{
+      const del=isDeleted(t);
+      const hay=[
+        t.buyer,t.customerName,t.name,t.contact,t.phone,
+        eventLabel(t),t.passType,t.pass,t.notes
+      ].filter(Boolean).join(' ').toLowerCase();
+
+      if(q && !hay.includes(q)) return false;
+      if(ev && eventLabel(t)!==ev) return false;
+      if(pay && paymentLabel(t)!==pay) return false;
+      if(st==='deleted' && !del) return false;
+      if(st==='active' && del) return false;
+      return true;
+    });
+  }
+
+  function populateEvents(){
+    const sel=document.getElementById('jjEventEnhanced');
+    if(!sel) return;
+    const current=sel.value;
+    const vals=[...new Set(allTxns().map(eventLabel).filter(Boolean))].sort();
+    sel.innerHTML='<option value="">All Events</option>'+vals.map(v=>`<option>${String(v).replace(/</g,'&lt;')}</option>`).join('');
+    sel.value=vals.includes(current)?current:'';
+  }
+
+  function refreshStats(){
+    const list=filtered();
+    let revenue=0,cost=0,tickets=0,pending=0;
+    list.forEach(t=>{
+      const q=Number(t.qty)||1;
+      const sell=Number(t.sell)||0;
+      const buy=Number(t.buy||t.cost)||0;
+      revenue+=sell*q;
+      cost+=buy*q;
+      tickets+=q;
+      const st=String(t.status||t.paymentStatus||'').toLowerCase();
+      if(st.includes('pending')){
+        pending+=sell*q;
+      }else if(st.includes('partial')){
+        pending+=Math.max(0,(sell*q)-(Number(t.paid)||Number(t.amountPaid)||0));
+      }
+    });
+    const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
+    set('jjRevenueEnhanced',money(revenue));
+    set('jjCostEnhanced',money(cost));
+    set('jjProfitEnhanced',money(revenue-cost));
+    set('jjTicketsEnhanced',tickets);
+    set('jjPendingEnhanced',money(pending));
+    set('jjFilteredCount',`${list.length} sale${list.length===1?'':'s'}`);
+  }
+
+  window.jjOpenSaleDetails=function(id){
+    const t=allTxns().find(x=>String(x.id)===String(id));
+    if(!t) return;
+    const v=jjVenueFor(t);
+    const fields=[
+      ['Customer',t.buyer||t.customerName||t.name||'—'],
+      ['Contact',t.contact||t.phone||t.mobile||'—'],
+      ['Event',v ? (v.singer||v.eventName||v.name) : (t.venueLabel||'—')],
+      ['Venue',v ? [v.venue,v.city].filter(Boolean).join(', ') : '—'],
+      ['Pass',`${t.passType||t.pass||'Ticket'}${(t.qty||1)>1?' × '+t.qty:''}`],
+      ['Date',jjDateFor(t)||'—'],
+      ['Amount Paid',money((Number(t.sell)||0)*(Number(t.qty)||1))],
+      ['Buying Cost',money((Number(t.buy||t.cost)||0)*(Number(t.qty)||1))],
+      ['Payment Status',t.status||t.paymentStatus||'—'],
+      ['Promoter',t.promoter||'—'],
+      ['Notes',t.notes||'—'],
+      ['Sale ID',t.id||'—']
+    ];
+    const box=document.getElementById('jjSaleDetails');
+    if(!box)return;
+    box.innerHTML=fields.map(([k,val])=>`<div class="jj-detail-item ${k==='Notes'?'full':''}">
+      <div class="jj-detail-label">${k}</div>
+      <div class="jj-detail-value">${String(val).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+    </div>`).join('');
+    document.getElementById('jjSaleModalTitle').textContent=`Booking #${t.id||''}`;
+    document.getElementById('jjSaleModal').classList.add('open');
+    document.getElementById('jjSaleModal').setAttribute('aria-hidden','false');
+  };
+
+  function closeModal(){
+    const m=document.getElementById('jjSaleModal');
+    if(m){m.classList.remove('open');m.setAttribute('aria-hidden','true')}
+  }
+
+  function hookFilters(){
+    ['jjSearchEnhanced','jjEventEnhanced','jjPaymentEnhanced','jjStatusEnhanced'].forEach(id=>{
+      document.getElementById(id)?.addEventListener('input',refreshStats);
+      document.getElementById(id)?.addEventListener('change',refreshStats);
+    });
+    document.getElementById('jjClearFilters')?.addEventListener('click',()=>{
+      ['jjSearchEnhanced','jjEventEnhanced','jjPaymentEnhanced','jjStatusEnhanced'].forEach(id=>{
+        const e=document.getElementById(id); if(e)e.value='';
+      });
+      refreshStats();
+    });
+    document.getElementById('jjSaleModalClose')?.addEventListener('click',closeModal);
+    document.getElementById('jjSaleModal')?.addEventListener('click',e=>{
+      if(e.target.id==='jjSaleModal')closeModal();
+    });
+    document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
+  }
+
+  // Add the eye/message actions to the existing rendered table without
+  // rewriting renderLedger or touching its data/sync implementation.
+  function enhanceRenderedRows(){
+    document.querySelectorAll('#panel-ledger [data-receipt], #panel-ledger [data-del]').forEach(btn=>{
+      const row=btn.closest('.txn-row, tr');
+      if(!row || row.dataset.jjEnhanced==='1' || row.querySelector('[data-message]'))return;
+      const id=btn.dataset.receipt || btn.dataset.del;
+      if(!id)return;
+      row.dataset.jjEnhanced='1';
+      const actions=row.querySelector('.actions, .row-actions, td:last-child') || row;
+      if(!actions)return;
+
+      const eye=document.createElement('button');
+      eye.type='button'; eye.textContent='👁'; eye.title='View booking details';
+      eye.className='jj-eye-enhanced';
+      eye.addEventListener('click',e=>{e.stopPropagation();jjOpenSaleDetails(id)});
+
+      const msg=document.createElement('button');
+      msg.type='button'; msg.textContent='💬'; msg.title='Send booking message';
+      msg.className='jj-msg-enhanced';
+      msg.addEventListener('click',e=>{e.stopPropagation();jjSendCustomerMessage(id)});
+
+      actions.prepend(msg);
+      actions.prepend(eye);
+    });
+  }
+
+  function refreshAll(){
+    populateEvents();
+    refreshStats();
+    setTimeout(enhanceRenderedRows,50);
+  }
+
+  window.addEventListener('DOMContentLoaded',()=>{
+    hookFilters();
+    refreshAll();
+    setInterval(refreshAll,1200);
+  });
+})();
+</script>
+
 </body>
 </html>
